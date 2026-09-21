@@ -68,6 +68,38 @@ final class IntegrationSwitchTests: XCTestCase {
     }
 
     @MainActor
+    func testCoordinatorKeepsTargetAfterSkillsDirectoryMetadataChanges() async throws {
+        let fixture = try await makeCoordinatorFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let skills = fixture.paths.codexHome.appending(path: "skills")
+        let probe = SequenceAccountProbe(
+            results: [fixture.identityA, fixture.identityB, fixture.identityA],
+            onRead: { call in
+                if call == 2 {
+                    try FileManager.default.setAttributes(
+                        [.modificationDate: Date().addingTimeInterval(60)],
+                        ofItemAtPath: skills.path
+                    )
+                }
+            }
+        )
+        let appController = FakeOfficialAppController()
+        let coordinator = makeCoordinator(fixture: fixture, probe: probe, appController: appController)
+        var phases: [SwitchPhase] = []
+
+        let result = try await coordinator.switchAccount(to: fixture.accountB.id) { phases.append($0) }
+        let activeProfileID = try await fixture.store.loadProfiles().first(where: \.isActive)?.id
+
+        XCTAssertEqual(result.account, fixture.identityB)
+        XCTAssertEqual(try Data(contentsOf: fixture.paths.authFile), fixture.authenticationB)
+        XCTAssertEqual(activeProfileID, fixture.accountB.id)
+        XCTAssertTrue(result.snapshotChanges.isUnchanged)
+        XCTAssertEqual(phases.last, .completed)
+        XCTAssertFalse(phases.contains(.rollingBack))
+        XCTAssertEqual(appController.launchCount, 1)
+    }
+
+    @MainActor
     func testCoordinatorRestoresPreviousAuthenticationWhenTargetVerificationFails() async throws {
         let fixture = try await makeCoordinatorFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -163,6 +195,37 @@ final class IntegrationSwitchTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: fixture.paths.authFile), fixture.authenticationA)
         let activeProfile = try await fixture.store.loadProfiles().first(where: \.isActive)
         XCTAssertEqual(activeProfile?.id, fixture.accountA.id)
+    }
+
+    @MainActor
+    func testCoordinatorStillRollsBackWhenProtectedSkillFileChanges() async throws {
+        let fixture = try await makeCoordinatorFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let skill = fixture.paths.codexHome.appending(path: "skills/example/SKILL.md")
+        let probe = SequenceAccountProbe(
+            results: [fixture.identityA, fixture.identityB, fixture.identityA],
+            onRead: { call in
+                if call == 2 {
+                    try Data("unexpected-skill-mutation".utf8).write(to: skill)
+                }
+            }
+        )
+        let appController = FakeOfficialAppController()
+        let coordinator = makeCoordinator(fixture: fixture, probe: probe, appController: appController)
+        var phases: [SwitchPhase] = []
+
+        do {
+            _ = try await coordinator.switchAccount(to: fixture.accountB.id) { phases.append($0) }
+            XCTFail("실제 skill 파일 변경은 계속 전환을 중단해야 합니다")
+        } catch SwitcherError.protectedStateChangedDuringSwitch(let paths) {
+            XCTAssertEqual(paths, ["skills/example/SKILL.md"])
+        }
+
+        let activeProfileID = try await fixture.store.loadProfiles().first(where: \.isActive)?.id
+        XCTAssertEqual(try Data(contentsOf: fixture.paths.authFile), fixture.authenticationA)
+        XCTAssertEqual(activeProfileID, fixture.accountA.id)
+        XCTAssertTrue(phases.contains(.rollingBack))
+        XCTAssertFalse(phases.contains(.completed))
     }
 
     @MainActor

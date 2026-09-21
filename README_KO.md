@@ -14,7 +14,7 @@ Codex Account Switcher는 macOS 메뉴바에서 **사용자가 직접 선택한 
 - 현재 설치 환경의 `~/.codex/auth.json` 파일 기반 인증과 권한 `0600` 확인 완료
 - 가짜 `CODEX_HOME`에서 인증만 바꾸는 10회 전환, 공유 상태 해시 불변, 실패 복구 확인 완료
 - 파일 기반 인증을 사용하던 공식 앱에서 실제 두 계정 전환, 앱 재실행, 동일 task 대화 맥락 유지와 후속 코드 작업 확인 완료
-- 전체 자동 테스트 46개 통과
+- 전체 자동 테스트 52개 통과
 
 자세한 실환경 결과는 [환경 진단](docs/ENVIRONMENT_REPORT.md)과 [세션 연속성 보고서](docs/SESSION_CONTINUITY_REPORT.md)를 확인하세요.
 

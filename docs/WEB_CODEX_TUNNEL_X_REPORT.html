@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="ko" data-editable-document="v1">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>웹쫀쿠 조사 보고서 — GPT 웹·폴더·터널</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#F4EFE6;
+      --paper:#FBF7F0;
+      --fg:#1C1914;
+      --muted:#6A6458;
+      --line:#DDD4C4;
+      --accent:#9C3B1E;
+      --accent-weak:#F1E2D6;
+      --ok:#2B4C3A;
+      --ok-weak:#E4EDE6;
+      --warn:#8A5A12;
+      --warn-weak:#F4E8D0;
+      --bad:#7A2430;
+      --bad-weak:#F3E0E1;
+      --maxw:980px;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html{-webkit-text-size-adjust:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:"IBM Plex Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      font-size:16.5px;
+      line-height:1.7;
+      letter-spacing:-0.01em;
+      word-break:keep-all;
+    }
+    a{color:var(--accent); text-underline-offset:3px}
+    .wrap{max-width:var(--maxw); margin:0 auto; padding:48px 22px 88px}
+    header.hero{
+      border-bottom:1px solid var(--line);
+      padding-bottom:28px;
+      margin-bottom:28px;
+    }
+    .eyebrow{
+      font-size:12px;
+      font-weight:600;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:var(--accent);
+      margin:0 0 10px;
+    }
+    h1,h2,h3{font-family:"Gowun Batang", serif; line-height:1.28; letter-spacing:-0.02em}
+    h1{font-size:clamp(28px,5.4vw,44px); font-weight:700; margin:0 0 14px}
+    h2{font-size:clamp(21px,3.4vw,28px); margin:48px 0 14px}
+    h3{font-size:18px; margin:0 0 8px}
+    p{margin:0 0 14px}
+    .lede{font-size:clamp(17px,2.2vw,20px); color:var(--muted); margin:0 0 18px}
+    nav.toc{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin:18px 0 0;
+    }
+    nav.toc a{
+      display:inline-block;
+      padding:6px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      text-decoration:none;
+      color:var(--fg);
+      font-size:13px;
+      background:var(--paper);
+    }
+    .meta{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:1px;
+      background:var(--line);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      overflow:hidden;
+      margin:22px 0 0;
+    }
+    .meta>div{background:var(--paper); padding:14px 16px}
+    .meta dt{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+    .meta dd{margin:4px 0 0; font-weight:500}
+    .callout{
+      padding:16px 18px;
+      border-radius:var(--radius);
+      margin:18px 0;
+    }
+    .callout.limit{background:var(--warn-weak); border-left:3px solid var(--warn)}
+    .callout.verdict{background:var(--paper); border:1px solid var(--line)}
+    .split{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin:18px 0 8px;
+    }
+    .arch{
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px 18px 8px;
+    }
+    .arch .tag{
+      display:inline-block;
+      font-size:11px;
+      font-weight:600;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-bottom:8px;
+    }
+    .tag.a{color:var(--ok)}
+    .tag.b{color:var(--accent)}
+    article.item{
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px 18px 14px;
+      margin:14px 0;
+    }
+    article.item .src{
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 8px;
+    }
+    blockquote{
+      margin:10px 0 12px;
+      padding:12px 16px;
+      border-left:3px solid var(--accent);
+      background:var(--accent-weak);
+      border-radius:0 12px 12px 0;
+      font-family:"Gowun Batang", serif;
+      font-size:17px;
+    }
+    .comment{
+      background:var(--ok-weak);
+      border-radius:12px;
+      padding:12px 14px;
+      font-size:15px;
+    }
+    .comment strong{color:var(--ok)}
+    .sw{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:8px 0 18px}
+    .sw section{
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px 18px;
+    }
+    .sw ul{margin:6px 0; padding-left:18px}
+    .badge{
+      display:inline-block;
+      font-size:11px;
+      font-weight:600;
+      padding:2px 8px;
+      border-radius:999px;
+      margin-right:6px;
+      vertical-align:middle;
+    }
+    .badge.high{background:#E7EFE8; color:var(--ok)}
+    .badge.med{background:var(--warn-weak); color:var(--warn)}
+    .badge.low{background:var(--bad-weak); color:var(--bad)}
+    .badge.xmiss{background:#EDE8DC; color:var(--muted)}
+    ul.plain{margin:6px 0 14px; padding-left:18px}
+    .sources li{margin:6px 0}
+    footer.note{margin-top:40px; color:var(--muted); font-size:14px}
+    @media (max-width:720px){
+      .meta,.split,.sw{grid-template-columns:1fr}
+      .wrap{padding:32px 16px 64px}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap" data-edit-id="page" data-edit-kind="page">
+    <header class="hero" data-edit-id="hero" data-edit-kind="header">
+      <p class="eyebrow" data-edit-id="hero-eyebrow" data-edit-kind="text">공개 후기 조사 · 2026-09-21</p>
+      <h1 data-edit-id="hero-title" data-edit-kind="heading">웹쫀쿠 — GPT 웹을 폴더와 터널로 붙이는 방식</h1>
+      <p class="lede" data-edit-id="hero-lede" data-edit-kind="text">요청은 X(트위터)에서 후기를 모으는 것이었다. X 자체는 로그인 벽에 막혔고, 같은 주제를 다루는 국내외 공개글·저장소·공식 문서를 원문 대조해 정리했다. 커뮤니티 문장과 내 코멘트는 분리했다.</p>
+      <nav class="toc" data-edit-id="toc" data-edit-kind="nav" data-edit-label="목차">
+        <a href="#verdict">결론</a>
+        <a href="#use">활용</a>
+        <a href="#setup">세팅</a>
+        <a href="#proscons">장단점</a>
+        <a href="#ban">제재</a>
+        <a href="#fine">문제없다</a>
+        <a href="#diy">직접 후기</a>
+        <a href="#related">관련 정보</a>
+        <a href="#sources">출처</a>
+      </nav>
+      <section class="meta" data-edit-id="meta-grid" data-edit-kind="group" data-edit-label="조사 메타">
+        <div><dt>조사일</dt><dd>2026-09-21 KST</dd></div>
+        <div><dt>X 원문</dt><dd>로그인 벽 · 미확보</dd></div>
+        <div><dt>확인 출처</dt><dd>공개 웹 18곳+</dd></div>
+        <div><dt>용어 “웹쫀쿠”</dt><dd>색인 0건</dd></div>
+      </section>
+    </header>
+
+    <aside class="callout limit" data-edit-id="limit-box" data-edit-kind="text" data-edit-label="수집 한계">
+      <p><strong>수집 한계.</strong> <code>x.com/search</code>는 로그인 온보딩으로 튕겼고, nitter·site:x.com 색인도 막혔다. 따라서 이 보고서는 “X에 없다”가 아니라 <strong>X 1차 원문을 이번 세션에서 읽지 못했다</strong>고 적는다. 대신 와이고수, GeekNews, PyTorchKR, GitHub, OpenAI 문서, 영문 튜토리얼처럼 X와 같은 주제를 말하는 공개 글을 대조했다. “웹쫀쿠 / 웹쪼쿠” 완전일치 검색은 0건이었다. 아래에서는 사용자가 가리킨 행위 — GPT 웹 + 로컬 폴더 + 터널 — 를 그 이름으로 부른다.</p>
+    </aside>
+
+    <section id="verdict" data-edit-id="verdict" data-edit-kind="section">
+      <h2 data-edit-id="verdict-title" data-edit-kind="heading">한 줄로 말하면</h2>
+      <div class="callout verdict" data-edit-id="verdict-body" data-edit-kind="text">
+        <p>사람들이 “코덱스 한도를 안 쓴다”고 말하는 방법은 사실상 두 갈래다. 하나는 ChatGPT 웹을 클라이언트로 두고 터널로 로컬 MCP에 붙여 <strong>일반 웹 대화 한도</strong>로 파일을 고치는 길이다. 다른 하나는 Codex 앱의 모델 턴만 웹 채팅으로 넘기는 비공식 브릿지다. 공식 문서는 Codex 웹·CLI·IDE·Work가 <strong>같은 Codex 할당량을 공유</strong>한다고 적는다. 그래서 터널이 Codex 풀을 늘려 주지는 않는다. 커뮤니티가 노리는 틈은 Codex 풀이 아니라, 그 목록에 들어 있지 않은 <strong>일반 ChatGPT 대화 풀</strong>이다.</p>
+      </div>
+      <div class="split" data-edit-id="arch-split" data-edit-kind="group">
+        <article class="arch" data-edit-id="arch-a" data-edit-kind="card">
+          <p class="tag a">유형 A · 요청과 가장 가깝다</p>
+          <h3>웹 ChatGPT → 터널 → 로컬 폴더</h3>
+          <p>브라우저의 일반 대화가 클라이언트가 된다. Cloudflare / ngrok / Pinggy / Tailscale Funnel 또는 OpenAI Secure MCP Tunnel로 로컬 MCP를 붙이면, 웹에서 파일을 읽고 고친다. DevSpace, CodexPro, Chat On Steroids가 이 줄이다.</p>
+        </article>
+        <article class="arch" data-edit-id="arch-b" data-edit-kind="card">
+          <p class="tag b">유형 B · 방향이 반대다</p>
+          <h3>Codex CLI → 브라우저 → 웹 ChatGPT</h3>
+          <p>터미널 Codex는 그대로 두고, 답만 로그인된 웹 세션에서 받는다. <code>codex-chatgpt-web</code>이 대표적이다. 한도 이동 효과가 있다는 주장이 가장 강한 쪽이고, 제작자 본인이 비공식 브라우저 자동화라고 적는다.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="use" data-edit-id="use" data-edit-kind="section">
+      <h2 data-edit-id="use-title" data-edit-kind="heading">어떻게 활용하는가</h2>
+      <p data-edit-id="use-lead" data-edit-kind="text">공개글에서 반복되는 사용 목적은 거의 같다. Codex CLI·데스크톱의 5시간/주간 창이 빨리 닳으니, 이미 내고 있는 ChatGPT 구독의 웹 대화를 코딩 에이전트처럼 쓰자는 것이다.</p>
+
+      <article class="item" data-edit-id="item-ygosu" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>한국 · 와이고수 · 지수두두공주 · 2026-09-09</p>
+        <h3>웹 GPT를 코덱스처럼 써서 “사용량 이빠이”</h3>
+        <blockquote>“니네 pc를 서버mcp화 만드는게 있어 그걸 해서 웹 gpt에서 mcp연결하면 웹 gpt를 코덱스처럼 활용가능함 그럼 사용량 이빠이 늘릴수 있음 참고”</blockquote>
+        <p>댓글 사용자 Calm=Halm은 도구 이름을 “cokacrement 인가”로 기억하면서도 같은 논리를 반복한다. 웹 채팅이 Codex 크레딧보다 혜자고, 응답시간 제한만 빼면 로컬에서 일을 시킬 수 있다는 말이다.</p>
+        <div class="comment"><strong>코멘트.</strong> 요청하신 “웹쫀쿠” 문장과 거의 한 치도 안 어긋나는 국내 1차 발언이다. 다만 도구 이름조차 와전된 채 퍼지고 있다. 효과의 실체는 한도 증가가 아니라 <em>한도 풀 이동</em>이다. 웹 대화에도 한도와 응답 시간 제한이 있다는 점은 같은 스레드가 이미 인정한다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-devspace-pitch" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>국제 · GitHub Waishnav/devspace · 조회 시 별 4,973</p>
+        <h3>Turn ChatGPT into Codex</h3>
+        <blockquote>“Give ChatGPT a secure connection to your own machine and Turn ChatGPT into Codex.”</blockquote>
+        <p>승인된 로컬 폴더를 워크스페이스로 열고, 파일 읽기/쓰기/검색, 테스트·빌드·git용 셸, Git worktree, <code>AGENTS.md</code> / <code>CLAUDE.md</code> 준수를 내세운다. 코드는 제3자 클라우드에 올리지 않고 자기 기계에서 돈다고 한다.</p>
+        <div class="comment"><strong>코멘트.</strong> 마케팅 문장이 커뮤니티 은어보다 더 선명하다. “Codex처럼”은 로컬 파일·터미널 루프를 뜻하지, Codex 제품 쿼터를 복제한다는 뜻이 아니다. 별 4,973은 이 조사가 확인한 수치이며, 유행 규모는 한국어 은어 검색 0건과 대조된다. 말은 안 퍼져도 도구는 퍼진 상태다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-pytorch-codexpro" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>한국 · PyTorchKR · 박정환 · 2026-08-27</p>
+        <h3>웹 화면에서 저장소를 직접 다루기</h3>
+        <p>소개문은 CodexPro를 “사용량 우회 도구가 아니다”라고 제목부터 박아 둔다. 대상은 터미널 에이전트 대신 ChatGPT 웹에서 대화하는 습관이 있는 사람, 저장소 여러 개를 오가며 경계를 정하고 싶은 사람이다.</p>
+        <div class="comment"><strong>코멘트.</strong> 국내 정리글 가운데 가장 냉정하다. 커뮤니티가 “한도 치트”로 말하는 바로 그 물건을, 제작자·소개자가 우회가 아니라고 선을 긋는다. 실제 이득은 복사-붙여넣기 제거와 웹 대화 UX다. 한도 절약은 부수 효과로만 따라온다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-gyuha" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>한국 · 신규하 블로그 · 2026-09-01 · 유형 B</p>
+        <h3>Codex 쿼터 0원, 웹 구독으로 터미널 코딩</h3>
+        <blockquote>“OpenAI 정책상 Codex 사용량 풀과 일반 ChatGPT 웹 대화 사용량은 완전히 분리되어 있습니다.”</blockquote>
+        <p>같은 글은 공개 5주 만에 별 2,700+라고 적는다. 오늘 GitHub 페이지는 <code>miuuyy/codex-chatgpt-web</code> 별 <strong>9,897</strong>을 표시했다.</p>
+        <div class="comment"><strong>코멘트.</strong> “완전히 분리”는 OpenAI 가격 문서의 직접 문장이 아니다. 확인된 공식 문장은 Codex·Work·Excel이 <em>같은</em> 할당량을 쓴다는 쪽이다. 웹 일반 대화가 그 목록 밖인 것은 맞을 수 있으나, 정책 단정으로는 과하다. 별 수는 3주 만에 2,700 → 9,897로 늘어 난 흔적이라, 유행 속도는 블로그 시점보다 빠르다.</div>
+      </article>
+    </section>
+
+    <section id="setup" data-edit-id="setup" data-edit-kind="section">
+      <h2 data-edit-id="setup-title" data-edit-kind="heading">어떻게 세팅한다고 하는가</h2>
+      <p data-edit-id="setup-lead" data-edit-kind="text">아래는 공개 문서에 나온 구조 요약이다. 한도 우회 실행 레시피는 적지 않는다. 공통 골격만 말하면, ChatGPT 클라우드는 <code>localhost</code>에 닿지 못하므로 HTTPS 끝점 또는 OpenAI가 호스팅하는 터널이 필요하다.</p>
+
+      <article class="item" data-edit-id="item-setup-official" data-edit-kind="card">
+        <p class="src"><span class="badge high">공식</span>OpenAI Secure MCP Tunnel · developers.openai.com</p>
+        <h3>공식 경로: 아웃바운드 전용 tunnel-client</h3>
+        <p>로컬·사설 MCP를 공용 인터넷에 열지 않고 ChatGPT / Codex / Responses API에 붙이려면, 고객 쪽 <code>tunnel-client</code>가 <code>api.openai.com:443</code>으로 나가는 연결을 유지한다. ChatGPT 플러그인에서 Connection을 Tunnel로 고르고 터널 ID를 고르면 된다. 헬프센터도 “로컬 MCP에 직접 연결은 불가, Secure MCP Tunnel을 쓰라”고 적는다.</p>
+        <div class="comment"><strong>코멘트.</strong> 폴더+터널 자체는 이미 공식 제품 표면이다. “웹쫀쿠”가 곧 약관 위반이라고 단정하면 이 문서와 충돌한다. 다만 이 공식 경로는 Codex 한도를 아껴 주지 않는다. 손발을 웹에 달아 줄 뿐이다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-setup-devspace" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>AIGCDev 튜토리얼 · 2026-08-27 · DevSpace 1.0.8 + Tailscale Funnel</p>
+        <h3>커뮤니티 경로: 로컬 MCP + 공개 HTTPS</h3>
+        <p>반복되는 순서는 이렇다. 허용 폴더를 좁게 정한다. 로컬 포트(DevSpace는 보통 7676)에 MCP를 띄운다. Cloudflare quick tunnel, ngrok, Pinggy, Tailscale Funnel 중 하나로 HTTPS를 만든다. ChatGPT에서 개발자 모드를 켜고 Plugins에 <code>https://호스트/mcp</code>를 등록한다. Owner 비밀번호 또는 OAuth로 승인한다. 새 대화에서 워크스페이스를 연다. 끝나면 터널을 끈다.</p>
+        <p>AIGCDev는 Funnel이 필요하고 Serve는 안 된다고 못 박는다. ChatGPT 클라우드는 tailnet 밖에 있기 때문이다. DevSpace 이슈 #5에서는 Tailscale Funnel에서 “No Auth”가 실패하고 OAuth가 통과했다는 현장 보고가 있다.</p>
+        <div class="comment"><strong>코멘트.</strong> 세팅 실패의 대부분은 모델이 아니라 연결 계층이다. URL이 바뀔 때마다 플러그인을 다시 만들고, OAuth 메타데이터가 localhost를 가리키면 웹이 붙지 못한다. 커뮤니티가 “한 번 세팅하면 끝”이라고 말하는 것과 실제 운영 비용이 어긋나는 지점이다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-setup-plan-limit" data-edit-kind="card">
+        <p class="src"><span class="badge med">문서 충돌</span>OpenAI 헬프센터 · Developer mode and MCP apps</p>
+        <h3>개인 Pro에서 쓰기가 되는가</h3>
+        <p>헬프센터는 앱·전체 MCP·개발자 모드가 Business / Enterprise·Edu 웹에 있다고 적고, Pro는 개발자 모드에서 읽기/가져오기 권한으로 MCP를 쓸 수 있다고 읽힌다. 반면 개발자 커뮤니티(2025-09)와 서드파티 README는 개인 계정에서도 쓰기 도구가 보인다고 가정한다. CodexPro FAQ는 2026년 7월 문서 기준으로 Plus는 커스텀 MCP 티어에 없고, Pro는 write가 없다고 요약한다.</p>
+        <div class="comment"><strong>코멘트.</strong> “웹에서 파일을 수정한다”는 약속의 병목은 터널이 아니라 계정 정책일 수 있다. 국내 후기가 잘 된다고 해도, 그 계정이 Plus인지 Pro인지 Business인지 구분하지 않으면 재현이 안 된다. 도입 전에 Plugins 화면에 실제로 <code>write</code> / <code>edit</code>이 보이는지부터 보는 편이 맞다.</div>
+      </article>
+    </section>
+
+    <section id="proscons" data-edit-id="proscons" data-edit-kind="section">
+      <h2 data-edit-id="proscons-title" data-edit-kind="heading">장단점</h2>
+      <div class="sw" data-edit-id="sw-grid" data-edit-kind="group">
+        <section data-edit-id="pros" data-edit-kind="card">
+          <h3>사람들이 말하는 장점</h3>
+          <ul>
+            <li>웹 대화 UX를 유지한 채 로컬 파일을 다룬다.</li>
+            <li>이미 내는 Plus/Pro 구독을 코딩 루프에 쓴다.</li>
+            <li>코드가 벤더 클라우드 작업공간에 통째로 복제되지 않는다고 본다.</li>
+            <li>허용 폴더·읽기 전용·handoff 모드로 권한 폭을 줄일 수 있다.</li>
+            <li>공식 Secure MCP Tunnel을 쓰면 인바운드 포트를 안 열어도 된다.</li>
+          </ul>
+        </section>
+        <section data-edit-id="cons" data-edit-kind="card">
+          <h3>반복되는 단점</h3>
+          <ul>
+            <li>웹 대화에도 한도와 응답 시간 제한이 있다.</li>
+            <li>Cloudflare 빠른 터널 URL이 재시작마다 바뀐다.</li>
+            <li>대화가 몇 턴 가면 개발자 MCP가 꺼지는 보고가 있다.</li>
+            <li>공개 터널 + 셸 = 링크를 아는 사람의 원격 실행 위험.</li>
+            <li>심링크·allowedRoots는 OS 샌드박스가 아니다.</li>
+          </ul>
+        </section>
+      </div>
+
+      <article class="item" data-edit-id="item-devspace-140" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>GitHub · Waishnav/devspace#140</p>
+        <h3>첫 턴만 되고 다음 메시지에서 FORBIDDEN</h3>
+        <blockquote>“FORBIDDEN: This conversation does not support developer MCPs”</blockquote>
+        <p>새 대화에서는 되고, 같은 대화의 두 번째 메시지에서 도구가 사라진다. 어떤 사용자는 Chat이 아니라 Work로 강제된다고 읽고, 어떤 사용자는 1.0.5로 내리면 된다고 한다. 서버 로그에는 요청이 아예 안 찍힌다. 실패 지점이 DevSpace가 아니라 ChatGPT 쪽이라는 뜻이다.</p>
+        <div class="comment"><strong>코멘트.</strong> “문제없이 잘 쓴다”는 후기와 동시에 존재하는 운영 버그다. 한도보다 먼저 체감되는 마찰일 수 있다. 도구가 대화 스코프에서 꺼지면, 사용자는 새 채팅을 파며 컨텍스트를 잃는다. 웹쫀쿠의 실제 생산성은 모델 품질이 아니라 이 연결 안정성에 달려 있다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-geeknews" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>한국 · GeekNews · osteoporosis · 약 2026-08-22</p>
+        <h3>터널이 귀찮아서 GitHub 플러그인으로 우회</h3>
+        <p>저자는 MCP+터널 방식이 알려져 있다고 전제한 뒤, 웹 채팅 안의 코드 실행 컨테이너를 개발 환경으로 쓰고 GitHub 플러그인으로 인터넷 단절을 넘자고 한다. 댓글 ouroboros는 “Ngrok도 괜찮고 나중엔 내 도메인”이라고 맞받는다.</p>
+        <div class="comment"><strong>코멘트.</strong> 같은 한국 개발자 커뮤니티 안에서 이미 터널파와 반터널파가 갈린다. 터널을 쓰는 이유는 로컬 PC를 서버로 만들기 위함이고, 안 쓰는 이유는 그 운영 비용 때문이다. “웹쫀쿠”를 단일 레시피로 보면 이 분기점이 안 보인다.</div>
+      </article>
+    </section>
+
+    <section id="ban" data-edit-id="ban" data-edit-kind="section">
+      <h2 data-edit-id="ban-title" data-edit-kind="heading">제재당했다는 사람</h2>
+      <p data-edit-id="ban-lead" data-edit-kind="text">이 조사에서 <strong>폴더+터널 MCP 때문에 계정이 정지됐다</strong>는 1차 확증은 나오지 않았다. 가까운 사례와 약관 문구만 모아 둔다.</p>
+
+      <article class="item" data-edit-id="item-ban-none" data-edit-kind="card">
+        <p class="src"><span class="badge med">미검증 공백</span>X·Reddit·OpenAI 커뮤니티</p>
+        <h3>웹쫀쿠 전용 밴 리포트</h3>
+        <p>검색어를 제재·정지·banned·suspended와 섞어 쳐도, DevSpace / CodexPro / Secure MCP Tunnel을 원인으로 지목한 공개 글을 확인하지 못했다. 없다고 증명된 것이 아니라, 공개 증거가 없다는 뜻이다.</p>
+        <div class="comment"><strong>코멘트.</strong> 커뮤니티에서 “아직 안 걸린다”는 말은 표본 편향이 크다. 걸린 사람은 글을 안 남길 수 있고, 글이 남아도 X 로그인 벽 뒤에 있을 수 있다. 지금은 “안전하다”가 아니라 “공개 증거 없음”이 정확한 문장이다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-ban-false-positive" data-edit-kind="card">
+        <p class="src"><span class="badge med">관련·원인 불명</span>OpenAI Developer Community · 원격근무 Codex 정지 호소</p>
+        <h3>집+회사 네트워크 동시 사용 후 정지</h3>
+        <p>작성자는 집 컴퓨터와 회사 원격 데스크톱, 개인 PC의 ChatGPT·Codex를 동시에 써서 여러 네트워크로 보였고, 자동 탐지 오탐으로 정지됐다고 주장한다. 계정 공유·재판매는 없었다고 한다. MCP 터널을 원인으로 적지는 않았다.</p>
+        <div class="comment"><strong>코멘트.</strong> 제재 사례로 인용하려면 과하다. 다만 OpenAI가 “이상한 접속 패턴”을 계정 단위로 자를 수 있다는 정황은 된다. 공개 터널, 여러 기기, 자동화 트래픽이 겹치면 같은 오탐 바구니에 들어갈 여지는 있다. 인과는 미확인이다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-ban-tos" data-edit-kind="card">
+        <p class="src"><span class="badge high">약관 문구</span>유형 B에 더 가깝다</p>
+        <h3>프로그램적 추출·속도 제한 우회 금지</h3>
+        <p>OpenAI 이용약관은 출력물의 자동·프로그램적 추출과 rate limit / 보호 조치 우회를 금지한다. <code>codex-chatgpt-web</code> README는 비공식 브라우저 자동화이며 OpenAI API가 아니고, 약관 준수 책임은 사용자에게 있다고 적는다. 병렬 탭을 5개로 제한하는 이유도 과도한 트래픽을 피하기 위해서라고 한다.</p>
+        <div class="comment"><strong>코멘트.</strong> 유형 A(공식 개발자 모드 MCP)와 유형 B(웹 세션을 Codex 모델 공급원으로 쓰기)를 한 바구니에 넣으면 안 된다. 후자는 제작자가 이미 회색지대를 인정한다. 전자는 OpenAI가 문서화한 연결 방식이다. 제재 위험을 물을 때 이 구분을 빼먹으면 답이 틀린다.</div>
+      </article>
+    </section>
+
+    <section id="fine" data-edit-id="fine" data-edit-kind="section">
+      <h2 data-edit-id="fine-title" data-edit-kind="heading">문제없다고 생각하는 사람</h2>
+
+      <article class="item" data-edit-id="item-fine-devspace" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>DevSpace README · Usage Policies as of June 2026 주장</p>
+        <blockquote>“Using DevSpace as an MCP connector isn't against OpenAI's Usage Policies — it's a standard custom App/connector setup, and writing or running code isn't a restricted use case. … Used normally, you're fine.”</blockquote>
+        <div class="comment"><strong>코멘트.</strong> 제작자의 법률 의견이지 OpenAI의 개별 승인 서한은 아니다. “normally”가 핵심이다. 허용 폴더 밖의 비밀, 계정 공유, 한도 우회를 목적에 적으면 그 문장은 바로 무효가 된다. 다만 커넥터 자체는 공식 표면이라는 점은 헬프센터와 맞물린다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-fine-codexpro" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>CodexPro README / FAQ · GitHub 별 2,011</p>
+        <blockquote>It is not a hosted SaaS product, model proxy, quota bypass, account pool, or remote shell service.</blockquote>
+        <p>FAQ는 한도를 우회·증가·풀링하지 않으며, 모든 요청은 사용자 본인 ChatGPT 세션의 기존 한도를 탄다고 반복한다.</p>
+        <div class="comment"><strong>코멘트.</strong> 와이고수 스레드의 “사용량 이빠이”와 정면으로 충돌하는 자기 서술이다. 같은 기술을 두고 커뮤니티는 한도 치트라 하고, 도구는 한도 우회가 아니라 한다. 둘 다 부분적으로 맞다. 웹 대화 풀로 일을 옮기면 Codex 창은 덜 닳고, 계정 총량은 그대로다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-fine-ygosu2" data-edit-kind="card">
+        <p class="src"><span class="badge high">원문 확인</span>와이고수 댓글 · Calm=Halm · 2026-09-09</p>
+        <blockquote>“대신에 응답시간 제한이 있어서 그거 귀찮은거 빼고는 매우 좋음”</blockquote>
+        <div class="comment"><strong>코멘트.</strong> 제재 이야기가 아니라 체감 후기다. 한국 일반 커뮤니티에서 이미 “쓰는 중”이 나온다. 도구 이름을 틀린 채 추천하는 패턴은, 위험 고지가 전달되지 않는다는 뜻이기도 하다.</div>
+      </article>
+    </section>
+
+    <section id="diy" data-edit-id="diy" data-edit-kind="section">
+      <h2 data-edit-id="diy-title" data-edit-kind="heading">직접 만든 후기·방법</h2>
+
+      <article class="item" data-edit-id="item-diy-devspace" data-edit-kind="card">
+        <p class="src"><span class="badge high">확인</span>Waishnav/devspace · MIT · 별 4,973</p>
+        <h3>DevSpace</h3>
+        <p>자체 호스팅 MCP. 터널은 Cloudflare, ngrok, Pinggy, Tailscale Funnel. Owner 비밀번호. “Turn ChatGPT into Codex”가 공식 카피다. 보안 문서는 셸이 로컬 사용자 권한으로 돈다고 직접 적는다. 이슈 #45는 심링크가 허용 디렉터리 밖으로 새는 보고가 있다.</p>
+        <div class="comment"><strong>코멘트.</strong> 요청하신 활용 형태와 가장 잘 맞는다. 별 수로 보면 이미 주류 실험이다. 도입 판단은 한도가 아니라 셸 노출을 감수할지다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-diy-codexpro" data-edit-kind="card">
+        <p class="src"><span class="badge high">확인</span>rebel0789/codexpro · MIT · 별 2,011 · 한국 소개 2026-08-27</p>
+        <h3>CodexPro</h3>
+        <p>허용한 저장소 뿌리만 연다. 공개 터널에는 최소 24바이트 토큰. 쓰기는 workspace 모드가 아니면 도구 목록에 안 나온다. <code>.env</code>·키·<code>.git</code>·빌드 캐시는 차단 기본값이다. 버전은 0.30.0대로, 1.0 전 보안 수정은 최신 배포만 대상이라고 한다.</p>
+        <div class="comment"><strong>코멘트.</strong> 이름 때문에 Codex 우회로 오해받기 쉬운 도구를, 문서가 먼저 오해를 걷어 낸다. 보안 기본값은 DevSpace보다 깐깐해 보인다. 반대로 기능 폭은 더 좁을 수 있다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-diy-cos" data-edit-kind="card">
+        <p class="src"><span class="badge high">확인</span>Chat On Steroids · PyTorchKR 소개 2026-09-15</p>
+        <h3>로컬 데스크톱 앱 + 공식 터널 기본값</h3>
+        <p>Electron 앱이 MCP를 띄우고, Chrome 확장이 ChatGPT 탭과 로컬 세션을 짝짓는다. 기본 터널은 OpenAI Secure MCP Tunnel. Cloudflare 빠른 터널도 가능. 읽기 전용 모드가 있다. 셸 권한은 승인 폴더로 제한되지 않고 로그인 사용자 권한을 따른다고 저장소가 밝힌다. 1인 유지보수 베타, 서명·공증 없음.</p>
+        <div class="comment"><strong>코멘트.</strong> “웹에서 고친다”와 “공식 터널을 쓴다”를 동시에 노리는 타협안이다. 유형 A 중에서는 약관 표면이 가장 깔끔하다. 대신 신뢰 모델은 ‘이 베타 앱에 내 폴더와 터미널을 준다’로 바뀐다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-diy-kit" data-edit-kind="card">
+        <p class="src"><span class="badge med">소규모</span>gitihibi/chatgpt-devspace-mcp-kit</p>
+        <h3>Windows/macOS 원클릭 스크립트</h3>
+        <p>DevSpace + Cloudflare 빠른 터널을 배치 파일로 감싼다. 시작 스크립트가 <code>trycloudflare.com/mcp</code> URL을 찍으면 ChatGPT 커넥터에 붙여 넣는다. 별 1개 규모다.</p>
+        <div class="comment"><strong>코멘트.</strong> 확산된 제품이라기보다 “나도 세팅이 어려워서 감쌌다”는 개인 키트에 가깝다. 빠른 터널 URL 변경 문제를 그대로 상속한다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-diy-bridge" data-edit-kind="card">
+        <p class="src"><span class="badge high">확인</span>miuuyy/codex-chatgpt-web · 별 9,897 · 유형 B</p>
+        <h3>웹을 Codex의 모델 슬롯에 꽂기</h3>
+        <p>저장소 한 줄 소개는 “without using Codex quota”다. Codex 작업·도구 하네스는 유지하고, 선택된 모델 턴만 웹 Temporary Chat으로 보낸다. 풀 모드에서는 공식 tunnel-client로 도구 호출을 다시 Codex 태스크에 붙인다.</p>
+        <div class="comment"><strong>코멘트.</strong> 요청문(“웹에서 파일을 수정”)과 반대 방향이다. 파일 수정은 여전히 로컬 Codex가 하고, 웹은 두뇌만 빌려 준다. 한도 이야기의 진원지이므로 보고서에 넣었지만, 웹쫀쿠의 정의와는 다른 물건이다. 실행 설치 절차는 적지 않는다.</div>
+      </article>
+    </section>
+
+    <section id="related" data-edit-id="related" data-edit-kind="section">
+      <h2 data-edit-id="related-title" data-edit-kind="heading">관련 정보 — 한도 구조와 오해</h2>
+
+      <article class="item" data-edit-id="item-pricing" data-edit-kind="card">
+        <p class="src"><span class="badge high">공식</span>learn.chatgpt.com/docs/pricing · 열람 2026-09-21</p>
+        <h3>Codex 표면은 할당량을 공유한다</h3>
+        <blockquote>“Local messages and cloud chats share your plan’s usage allowance. Weekly limits may also apply.”</blockquote>
+        <p>같은 문서는 Codex on the web, CLI, IDE, iOS가 플랜 사용량에 포함되고, ChatGPT Work도 Codex와 같은 가격·크레딧·한도를 쓴다고 적는다. ChatGPT for Excel도 에이전트 한도를 공유한다. 일반 Chat 업로드·이미지·보이스 한도는 별도라는 다른 헬프 문서도 있다.</p>
+        <div class="comment"><strong>코멘트.</strong> “웹 Codex를 쓰면 CLI 한도가 안 깎인다”는 말은 공식 문서와 충돌한다. 커뮤니티가 실제로 아껴 보인다고 느끼는 지점은 chatgpt.com/codex가 아니라 <em>일반 채팅 + MCP</em>다. 이 구분을 안 하면 실험 설계가 처음부터 틀린다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-desktop-vs-web" data-edit-kind="card">
+        <p class="src"><span class="badge high">공식</span>ChatGPT Work and Codex 헬프 · Developer commands</p>
+        <h3>공식 로컬 폴더는 데스크톱 Codex 쪽</h3>
+        <p>로컬 폴더를 프로젝트에 연결해 읽고 고치는 기능은 데스크톱 앱의 Codex/로컬 프로젝트 문서에 있다. ChatGPT 웹의 슬래시 명령은 데스크톱·CLI 명령 세트를 노출하지 않는다고 한다. 웹에서 로컬을 만지려면 MCP 조립이 된다.</p>
+        <div class="comment"><strong>코멘트.</strong> 공식 제품만으로도 “폴더를 연결해 웹이 아닌 데스크톱에서 고친다”는 길은 있다. 웹쫀쿠가 존재하는 이유는 그 길이 Codex 한도를 쓰기 때문이다. 불편이 아니라 과금 단위가 동기인 셈이다.</div>
+      </article>
+
+      <article class="item" data-edit-id="item-security" data-edit-kind="card">
+        <p class="src"><span class="badge high">교차 확인</span>DevSpace 보안 모델 · CodexPro SECURITY · AIGCDev · code-server CVE</p>
+        <h3>실질 최대 리스크는 밴이 아니라 노출</h3>
+        <ul class="plain">
+          <li>공개 터널 URL은 비밀번호처럼 다뤄야 한다.</li>
+          <li>허용 루트 문자열 비교는 심링크를 따라 새는 보고가 있다.</li>
+          <li>bash는 로컬 사용자와 같은 권한이다.</li>
+          <li>인증 없는 code-server 공개는 별개 취약점(CVE-2025-47269 등)으로 이미 사고가 난 패턴이다.</li>
+        </ul>
+        <div class="comment"><strong>코멘트.</strong> 제재 토론에 비해 보안 토론이 빈약하다. 계정이 살아 있어도 폴더가 털리면 본전이다. 공식 tunnel-client가 커뮤니티 quick tunnel보다 나은 이유는 한도가 아니라 인바운드 면을 안 열어서다.</div>
+      </article>
+    </section>
+
+    <section id="sources" class="sources" data-edit-id="sources" data-edit-kind="section">
+      <h2 data-edit-id="sources-title" data-edit-kind="heading">출처 · 2026-09-21 확인</h2>
+      <ul>
+        <li><a href="https://ygosu.com/board/pan_monstarz/1925218">와이고수 — GPT 에이전트 MCP 팁</a> · 원문 인용 확인</li>
+        <li><a href="https://news.hada.io/topic?id=32606">GeekNews — Codex 한도 없이 웹 채팅 코딩</a> · 원문 확인</li>
+        <li><a href="https://gyuha.com/post/2026/09/2026-09-01-codex-chatgpt-web-free-coding-bridge/">신규하 — codex-chatgpt-web 소개</a> · 원문 확인</li>
+        <li><a href="https://discuss.pytorch.kr/t/codexpro-chatgpt-mcp/11723">PyTorchKR — CodexPro 소개</a> · 원문 확인</li>
+        <li><a href="https://discuss.pytorch.kr/t/chat-on-steroids-chatgpt-mcp/11915">PyTorchKR — Chat On Steroids 소개</a> · 원문 확인</li>
+        <li><a href="https://github.com/Waishnav/devspace">GitHub Waishnav/devspace</a> · 별 4,973 확인</li>
+        <li><a href="https://github.com/rebel0789/codexpro">GitHub rebel0789/codexpro</a> · 별 2,011 확인</li>
+        <li><a href="https://github.com/miuuyy/codex-chatgpt-web">GitHub miuuyy/codex-chatgpt-web</a> · 별 9,897 확인</li>
+        <li><a href="https://github.com/gitihibi/chatgpt-devspace-mcp-kit">GitHub chatgpt-devspace-mcp-kit</a></li>
+        <li><a href="https://github.com/Waishnav/devspace/issues/140">DevSpace#140 FORBIDDEN MCP</a></li>
+        <li><a href="https://github.com/Waishnav/devspace/issues/5">DevSpace#5 Tailscale Funnel OAuth</a></li>
+        <li><a href="https://aigcdev.com/en/articles/connect-chatgpt-pro-to-local-project-with-devspace">AIGCDev DevSpace + Funnel 튜토리얼</a> · 2026-08-27</li>
+        <li><a href="https://pinggy.io/blog/turn_chatgpt_into_free_local_coding_agent_devspace/">Pinggy — Turn ChatGPT Into a Free Local Coding Agent</a></li>
+        <li><a href="https://dev.to/lightningdev123/turn-chatgpt-into-a-local-coding-agent-with-devspace-and-mcp-4926">DEV — DevSpace and MCP</a></li>
+        <li><a href="https://developers.openai.com/api/docs/guides/secure-mcp-tunnels">OpenAI Secure MCP Tunnel</a></li>
+        <li><a href="https://learn.chatgpt.com/docs/pricing">ChatGPT Learn Pricing</a> · 로컬/클라우드 할당량 공유 문구 확인</li>
+        <li><a href="https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt">Developer mode and MCP apps</a></li>
+        <li><a href="https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan">Using Codex with your ChatGPT plan</a></li>
+        <li><a href="https://community.openai.com/t/possible-false-positive-detection-during-a-codex-development-workflow/1383263">OpenAI 커뮤니티 — 오탐 정지 호소</a> · 원인 미확인</li>
+        <li><a href="https://learn.chatgpt.com/docs/developer-commands.md">Developer commands — 웹은 CLI 명령 세트를 안 씀</a></li>
+      </ul>
+    </section>
+
+    <section data-edit-id="actions" data-edit-kind="section">
+      <h2 data-edit-id="actions-title" data-edit-kind="heading">이 보고서를 읽고 할 일</h2>
+      <ul class="plain" data-edit-id="actions-list" data-edit-kind="list">
+        <li>한도를 아껴 보려는 대상이 Codex 창인지, 일반 웹 대화 창인지부터 사용량 대시보드에서 구분한다.</li>
+        <li>로컬 폴더가 필요하면 공식 Secure MCP Tunnel 또는 데스크톱 Codex 로컬 프로젝트인지 먼저 보고, 공개 quick tunnel은 마지막에 둔다.</li>
+        <li>X 원문이 더 필요하면 로그인된 본인 계정으로 “DevSpace MCP”, “웹 GPT MCP”, “codex-chatgpt-web”을 검색해 이 보고서의 공백을 메운다.</li>
+      </ul>
+    </section>
+
+    <footer class="note" data-edit-id="footer" data-edit-kind="footer">
+      <p>이 문서는 공개 커뮤니티·공식 문서 조사다. 법률 자문이 아니고, 계정 한도 우회나 제재 회피 절차를 안내하지 않는다. 인용문은 확인한 원문에서 가져왔고, 확인하지 못한 X 게시물은 만들지 않았다.</p>
+    </footer>
+  </main>
+</body>
+</html>

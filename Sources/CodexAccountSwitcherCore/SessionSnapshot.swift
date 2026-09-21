@@ -149,6 +149,13 @@ public struct SessionSnapshotter: Sendable {
         var unchanged = 0
         for key in beforeKeys.intersection(afterKeys).sorted() {
             guard let old = before.entries[key], let new = after.entries[key] else { continue }
+            // Directory timestamps and allocation sizes also change for ignored or
+            // temporary children. Compare protected children separately; additions,
+            // deletions, and directory/file type changes must still be detected.
+            if old.kind == .directory, new.kind == .directory {
+                unchanged += 1
+                continue
+            }
             let contentChanged: Bool
             if old.sha256 != nil || new.sha256 != nil {
                 contentChanged = old.sha256 != new.sha256

@@ -69,11 +69,13 @@
 
 | 검증 | 결과 |
 |---|---|
-| `scripts/test.sh` | 46 tests, 0 failures |
+| `scripts/test.sh` | 52 tests, 0 failures |
 | 가짜 `CODEX_HOME` 10회 전환 | 통과 |
 | coordinator 대상 검증·재실행·세션 삭제 실패 자동 롤백 | 통과 |
 | 대상 적용 검증의 중복 refresh 금지 회귀 테스트 | 통과 |
 | 인증 교체 조용한 구간 보호 상태 무변경 검사 | 통과 |
+| skills 폴더 메타데이터 변화만 있을 때 전환 유지 | build 10 회귀 테스트 통과 |
+| 실제 skill 파일 변경과 보호 경로 추가·삭제·종류 변경 감지 | 통과 |
 | 롤백 시 앱 종료 실패에서 인증 재기록 금지 | 통과 |
 | wrapper/native CLI 종료 흐름 | 통과 |
 | Keychain 원본 조회 중복 방지 | 통과 |
