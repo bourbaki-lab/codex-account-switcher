@@ -5,6 +5,7 @@ import SwiftUI
 @main
 struct CodexAccountSwitcherApp: App {
     @StateObject private var model: AppModel
+    @StateObject private var claude = ClaudeDashboardModel()
 
     init() {
         if CommandLine.arguments.contains("--emergency-restore") {
@@ -22,7 +23,7 @@ struct CodexAccountSwitcherApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuContentView(model: model)
+            MenuContentView(model: model, claude: claude)
         } label: {
             Label("Codex Account Switcher", systemImage: "arrow.triangle.2.circlepath.circle")
         }

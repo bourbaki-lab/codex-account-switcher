@@ -23,6 +23,8 @@ public enum SwitcherError: Error, LocalizedError, Sendable {
     case rollbackFailed(String)
     case markerNotFound
     case fileOperation(String)
+    case claudeAppRunning
+    case claudeCarryOverUnavailable(String)
 
     public var errorDescription: String? {
         switch self {
@@ -78,6 +80,10 @@ public enum SwitcherError: Error, LocalizedError, Sendable {
             return "로컬 세션 저장소에서 연속성 테스트 마커를 찾지 못했습니다."
         case .fileOperation(let message):
             return "파일 작업에 실패했습니다: \(message)"
+        case .claudeAppRunning:
+            return "Claude 앱이 실행 중이라 세션 목록을 바꾸지 않았습니다. Claude 앱을 종료한 뒤 다시 시도하세요."
+        case .claudeCarryOverUnavailable(let message):
+            return "세션을 가져올 수 없습니다: \(message)"
         }
     }
 }

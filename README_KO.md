@@ -90,6 +90,29 @@ open "$HOME/Applications/Codex Account Switcher.app"
 
 `account/usage/read`가 성공하면 토큰 활동 요약도 내부 상태로 읽지만, 정확한 “작업 몇 회 남음”은 서버가 제공하지 않으므로 표시하지 않습니다.
 
+## Claude 탭 (실험 기능)
+
+팝오버 상단의 `Codex | Claude` 전환으로 Claude 데스크톱 앱 Code 탭의 계정별 세션 목록을 봅니다.
+
+- Claude 데스크톱은 대화 원본을 `~/.claude/projects/<작업 폴더>/<세션 ID>.jsonl`에 계정과 무관하게 저장하지만, 사이드바 목록은 `~/Library/Application Support/Claude/claude-code-sessions/<계정 UUID>/<조직 UUID>/local_*.json`으로 계정별로 나눕니다. 그래서 로그인만 바꾸면 이전 계정의 세션이 사이드바에서 보이지 않습니다.
+- 현재 계정은 Claude 앱의 `config.json`(`lastKnownAccountUuid`)으로, 표시 이메일·플랜은 `~/.claude.json`의 `oauthAccount`에서 마스킹해 스위처 전용 `Claude/accounts.json`에 기억합니다. 전환 전에 Claude 탭을 한 번 열어 두면 이전 계정도 이메일로 표시됩니다.
+- 5시간·주간 한도는 Claude 앱이 조직별로 남기는 `plan-usage-history.json`의 마지막 기록을 표시합니다. 네트워크 요청은 하지 않습니다.
+- `가져오기`는 Claude 앱을 정상 종료한 뒤 다른 계정의 목록 파일을 현재 계정 목록에 복사하고 앱을 다시 실행합니다. 원본 목록과 대화 파일은 수정하지 않고, 이미 있는 목록 파일은 덮어쓰지 않으며, 대화 파일이 사라진 세션은 건너뜁니다. 정상 종료가 20초 안에 끝나지 않으면 아무것도 바꾸지 않습니다.
+- `가져오기 되돌리기`는 복사 이후 바뀌지 않은 목록 파일만 지웁니다. 새 계정에서 이어서 쓴 세션은 남깁니다.
+- Claude 로그인 자체는 앱 내부 암호화 저장소에 있으므로 스위처가 바꾸지 않습니다. `계정 전환 안내`로 Claude 앱을 열고 사용자가 직접 로그아웃·로그인합니다.
+- 새 계정으로 로그인한 직후에는 목록 폴더가 없을 수 있습니다. 이때는 Claude 앱에서 세션을 하나 시작한 뒤 새로고침하세요.
+- 다른 계정에서 이어간 세션의 첫 요청은 프롬프트 캐시가 없어 사용량이 크게 잡힐 수 있습니다. 이전 계정에서 생성된 thinking 블록을 새 계정 API가 받아들이는지는 아직 실측 전입니다.
+
+### Anthropic 약관 준수 조건
+
+2026-09-29에 [소비자 약관](https://www.anthropic.com/legal/consumer-terms), [이용 정책](https://www.anthropic.com/legal/aup), [Claude Code 법률·준수 문서](https://code.claude.com/docs/en/legal-and-compliance)를 기준으로 설계했습니다.
+
+- Claude 로그인 정보, OAuth 토큰, 세션 토큰을 읽거나 저장하거나 중개하지 않습니다. 로그인은 항상 Claude 앱의 공식 흐름으로 사용자가 직접 합니다.
+- Anthropic 서버에 요청하지 않고 봇·스크립트로 서비스에 접근하지 않습니다. 사용자의 로컬 목록 파일만 읽고 복사합니다.
+- Claude 앱 바이너리와 서명은 수정하지 않습니다.
+- 본인 소유 계정 사이에서만 사용하세요. 계정·로그인 정보를 다른 사람과 공유하거나, 정지된 계정을 다른 계정으로 우회하는 데 쓰면 약관 위반입니다.
+- 한도 표시는 수동 판단용입니다. 한도 도달 시 자동으로 계정을 바꾸는 기능은 넣지 않습니다. 요금제 한도는 일반적인 개인 사용을 전제로 하므로, 더 많은 사용량이 필요하면 상위 요금제나 추가 사용량이 공식 경로입니다.
+
 ## Session Continuity Test
 
 1. `연속성 테스트 시작`을 누릅니다. `CAS-PROBE-<UUID>`가 클립보드에 복사됩니다.

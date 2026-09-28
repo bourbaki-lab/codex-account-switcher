@@ -2,42 +2,79 @@ import AppKit
 import CodexAccountSwitcherCore
 import SwiftUI
 
+enum DashboardTab: String {
+    case codex
+    case claude
+}
+
 struct MenuContentView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var claude: ClaudeDashboardModel
+    @AppStorage("dashboardTab") private var tab: DashboardTab = .codex
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
+            Picker("대시보드", selection: $tab) {
+                Text("Codex").tag(DashboardTab.codex)
+                Text("Claude").tag(DashboardTab.claude)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
             Divider()
-            currentAccount
-            usage
-            Divider()
-            profiles
-            controls
-            Divider()
-            continuity
-            status
+            switch tab {
+            case .codex:
+                codexContent
+            case .claude:
+                ClaudeContentView(model: claude)
+            }
             Divider()
             footer
         }
         .padding(14)
         .frame(width: 360)
         .task { await model.runAutomaticRateLimitRefresh() }
+        .task(id: tab) {
+            if tab == .claude { await claude.runAutomaticRefresh() }
+        }
+    }
+
+    @ViewBuilder
+    private var codexContent: some View {
+        currentAccount
+        usage
+        Divider()
+        profiles
+        controls
+        Divider()
+        continuity
+        status
     }
 
     private var header: some View {
         HStack {
             Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
                 .font(.title2)
-                .foregroundStyle(.blue)
+                .foregroundStyle(tab == .claude ? .orange : .blue)
             VStack(alignment: .leading) {
                 Text("Codex Account Switcher").font(.headline)
-                Text(model.environment?.officialApp.map { "공식 앱 \($0.shortVersion ?? "버전 미확인")" } ?? "공식 앱 확인 중")
+                Text(headerSubtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            if model.isBusy { ProgressView().controlSize(.small) }
+            if model.isBusy || claude.isBusy { ProgressView().controlSize(.small) }
+        }
+    }
+
+    private var headerSubtitle: String {
+        switch tab {
+        case .codex:
+            model.environment?.officialApp.map { "공식 앱 \($0.shortVersion ?? "버전 미확인")" } ?? "공식 앱 확인 중"
+        case .claude:
+            claude.report.map { report in
+                report.app.map { "Claude 앱 \($0.shortVersion ?? "버전 미확인")" } ?? "Claude 앱 없음"
+            } ?? "Claude 앱 확인 중"
         }
     }
 
