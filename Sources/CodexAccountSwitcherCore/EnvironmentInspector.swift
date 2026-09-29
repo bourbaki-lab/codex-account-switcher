@@ -109,10 +109,19 @@ public struct OfficialAppLocator: Sendable {
             let bundleID = info["CFBundleIdentifier"] as? String
         else { return nil }
 
-        let bundledCodex = appURL.appending(path: "Contents/Resources/codex")
-        let hasBundledCodex = FileManager.default.isExecutableFile(atPath: bundledCodex.path)
         let looksOfficial = bundleID.lowercased().hasPrefix("com.openai.")
-        guard looksOfficial, hasBundledCodex else { return nil }
+        // New desktop releases package the native CLI in its own app bundle.
+        // Prefer it over the shell launcher, while retaining older app layouts.
+        let bundledCodexPaths = [
+            "Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+            "Contents/Resources/codex-cli/bin/codex",
+            "Contents/Resources/codex"
+        ]
+        guard looksOfficial,
+              let bundledCodex = bundledCodexPaths
+                .map({ appURL.appending(path: $0) })
+                .first(where: { FileManager.default.isExecutableFile(atPath: $0.path) })
+        else { return nil }
 
         return OfficialAppInfo(
             path: appURL.path,

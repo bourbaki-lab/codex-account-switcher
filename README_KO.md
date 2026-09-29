@@ -14,7 +14,19 @@ Codex Account Switcher는 macOS 메뉴바에서 **사용자가 직접 선택한 
 - 현재 설치 환경의 `~/.codex/auth.json` 파일 기반 인증과 권한 `0600` 확인 완료
 - 가짜 `CODEX_HOME`에서 인증만 바꾸는 10회 전환, 공유 상태 해시 불변, 실패 복구 확인 완료
 - 파일 기반 인증을 사용하던 공식 앱에서 실제 두 계정 전환, 앱 재실행, 동일 task 대화 맥락 유지와 후속 코드 작업 확인 완료
-- 전체 자동 테스트 46개 통과
+- 2026-09-30 Claude 탭 및 새 Codex 번들 경로 지원을 포함한 자동 테스트 60개 통과
+
+위의 실제 두 계정 전환 PASS는 과거 파일 기반 인증 환경의 결과입니다. 현재 Codex 업데이트 환경에서는 새 실행 경로 탐지를 확인했으나, 실제 계정 전환 end-to-end 검증은 아직 완료하지 않았습니다. 초기화 중 또는 인증 확인 실패 시 표시되는 `원클릭 불가`의 지속 원인은 추가 확인 중입니다.
+
+### Codex 앱 업데이트 호환성
+
+공식 앱 번들 안의 실행 파일을 다음 순서로 찾습니다. 실행 가능한 파일만 채택하며 공식 앱 Bundle Identifier 검사도 유지합니다.
+
+1. `Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex`
+2. `Contents/Resources/codex-cli/bin/codex`
+3. `Contents/Resources/codex` (기존 버전)
+
+새 레이아웃에서 기존 경로만 찾느라 `공식 앱 또는 App Server를 찾지 못했습니다`로 중단되던 문제를 수정했습니다. 경로 탐지 성공과 공식 데스크톱 호스트의 계정 변경 성공은 별도로 확인해야 합니다.
 
 자세한 실환경 결과는 [환경 진단](docs/ENVIRONMENT_REPORT.md)과 [세션 연속성 보고서](docs/SESSION_CONTINUITY_REPORT.md)를 확인하세요.
 
@@ -94,9 +106,11 @@ open "$HOME/Applications/Codex Account Switcher.app"
 
 팝오버 상단의 `Codex | Claude` 전환으로 Claude 데스크톱 앱 Code 탭의 계정별 세션 목록을 봅니다.
 
+**Codex 세션을 Claude로 변환하는 기능은 아닙니다.** Claude 계정 변경 후에도 자동으로 세션 목록을 가져오지 않습니다. 공식 Claude 앱에서 로그인한 다음 이 탭의 `새로고침` → 이전 계정의 `가져오기`를 직접 눌러야 합니다. 목록 표시·복사·되돌리기는 자동 테스트로 검증했지만, 다른 실제 계정으로 같은 대화에서 후속 작업까지 성공하는지는 아직 검증하지 못했습니다.
+
 - Claude 데스크톱은 대화 원본을 `~/.claude/projects/<작업 폴더>/<세션 ID>.jsonl`에 계정과 무관하게 저장하지만, 사이드바 목록은 `~/Library/Application Support/Claude/claude-code-sessions/<계정 UUID>/<조직 UUID>/local_*.json`으로 계정별로 나눕니다. 그래서 로그인만 바꾸면 이전 계정의 세션이 사이드바에서 보이지 않습니다.
 - 현재 계정은 Claude 앱의 `config.json`(`lastKnownAccountUuid`)으로, 표시 이메일·플랜은 `~/.claude.json`의 `oauthAccount`에서 마스킹해 스위처 전용 `Claude/accounts.json`에 기억합니다. 전환 전에 Claude 탭을 한 번 열어 두면 이전 계정도 이메일로 표시됩니다.
-- 5시간·주간 한도는 Claude 앱이 조직별로 남기는 `plan-usage-history.json`의 마지막 기록을 표시합니다. 네트워크 요청은 하지 않습니다.
+- 5시간·주간 한도는 Claude 앱이 조직별로 남기는 `plan-usage-history.json`의 마지막 기록을 표시합니다. 네트워크 요청은 하지 않습니다. 서버의 실시간 잔량이 아니므로 화면의 기록 시각을 함께 확인하세요.
 - `가져오기`는 Claude 앱을 정상 종료한 뒤 다른 계정의 목록 파일을 현재 계정 목록에 복사하고 앱을 다시 실행합니다. 원본 목록과 대화 파일은 수정하지 않고, 이미 있는 목록 파일은 덮어쓰지 않으며, 대화 파일이 사라진 세션은 건너뜁니다. 정상 종료가 20초 안에 끝나지 않으면 아무것도 바꾸지 않습니다.
 - `가져오기 되돌리기`는 복사 이후 바뀌지 않은 목록 파일만 지웁니다. 새 계정에서 이어서 쓴 세션은 남깁니다.
 - Claude 로그인 자체는 앱 내부 암호화 저장소에 있으므로 스위처가 바꾸지 않습니다. `계정 전환 안내`로 Claude 앱을 열고 사용자가 직접 로그아웃·로그인합니다.
