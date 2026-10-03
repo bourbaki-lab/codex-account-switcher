@@ -290,6 +290,8 @@ struct MenuContentView: View {
                 }
             }
             Menu {
+                Button("별명 바꾸기") { model.editNickname(profile) }
+                Divider()
                 Button("브라우저로 계정 변경") { model.requestAccountChange(profile, flow: .browser) }
                 Button("Device Code로 계정 변경") { model.requestAccountChange(profile, flow: .deviceCode) }
                 Divider()

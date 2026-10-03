@@ -271,3 +271,27 @@ final class ClaudeDesktopSessionsTests: XCTestCase {
         return output
     }
 }
+
+final class ClaudeNicknameTests: XCTestCase {
+    func testNicknameIsShownAndSurvivesLabelRefresh() throws {
+        let root = try TestFixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let paths = ClaudeDesktopPaths(
+            applicationSupport: root.appending(path: "Claude"),
+            claudeHome: root.appending(path: ".claude"),
+            cliConfigFile: root.appending(path: ".claude.json"),
+            switcherDirectory: root.appending(path: "Switcher")
+        )
+        let store = ClaudeAccountLabelStore(paths: paths)
+        try store.setNickname("  메인 Max ", accountUUID: "acct", organizationUUID: "org")
+        XCTAssertEqual(store.load()["acct"]?.nickname, "메인 Max")
+
+        try store.upsert(ClaudeAccountLabel(accountUUID: "acct", organizationUUID: "org", maskedEmail: "w***@gmail.com", planName: "Max 20x", observedAt: Date(), nickname: store.load()["acct"]?.nickname))
+        let partition = ClaudeAccountPartition(accountUUID: "acct", organizationUUID: "org", sessions: [], isCurrent: true, directoryExists: true, label: store.load()["acct"], usage: nil)
+        XCTAssertEqual(partition.displayName, "메인 Max")
+
+        try store.setNickname("", accountUUID: "acct", organizationUUID: "org")
+        XCTAssertNil(store.load()["acct"]?.nickname)
+        XCTAssertEqual(store.load()["acct"]?.maskedEmail, "w***@gmail.com")
+    }
+}

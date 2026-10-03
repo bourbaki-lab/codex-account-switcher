@@ -51,6 +51,9 @@ struct QuotaAdviceView: View {
                     .fontWeight(.semibold)
                     .lineLimit(2)
             }
+            if let secondary = recommendation.advice?.account.secondaryName {
+                Text(secondary).font(.caption2).foregroundStyle(.secondary)
+            }
             if let detail = recommendation.detail, !detail.isEmpty {
                 Text(detail)
                     .font(.caption)
@@ -76,8 +79,19 @@ struct QuotaAdviceView: View {
                         .padding(.horizontal, 5).padding(.vertical, 1)
                         .background(.green.opacity(0.15), in: Capsule())
                 }
+                Button {
+                    editNickname(advice.account)
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .help("별명 바꾸기")
                 Spacer()
                 statusText(advice.status, now: now)
+            }
+            if let secondary = advice.account.secondaryName {
+                Text(secondary).font(.caption2).foregroundStyle(.secondary)
             }
             if let remaining = advice.weeklyRemaining {
                 ProgressView(value: remaining, total: 100).tint(remaining < 20 ? .orange : tint(advice.account.provider))
@@ -106,6 +120,19 @@ struct QuotaAdviceView: View {
         }
         .padding(8)
         .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func editNickname(_ account: QuotaAccountSnapshot) {
+        guard let owner = account.ownerID else { return }
+        switch account.provider {
+        case .codex:
+            if let profile = model.profiles.first(where: { $0.id.uuidString == owner }) {
+                model.editNickname(profile)
+            }
+        case .claude:
+            let organization = String(account.id.dropFirst("claude/".count))
+            claude.editNickname(accountUUID: owner, organizationUUID: organization)
+        }
     }
 
     private func weeklyLine(_ advice: QuotaAdvice, remaining: Double, now: Date) -> String {

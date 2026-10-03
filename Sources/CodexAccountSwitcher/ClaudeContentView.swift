@@ -29,6 +29,7 @@ struct ClaudeContentView: View {
                 HStack {
                     Circle().fill(.green).frame(width: 8, height: 8)
                     Text(current.displayName).fontWeight(.semibold)
+                    nicknameButton(current)
                     Spacer()
                     if let plan = current.label?.planName {
                         Text(plan)
@@ -113,7 +114,10 @@ struct ClaudeContentView: View {
         return HStack(alignment: .top) {
             Image(systemName: "circle").foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 1) {
-                Text(partition.displayName)
+                HStack(spacing: 4) {
+                    Text(partition.displayName)
+                    nicknameButton(partition)
+                }
                 Text([partition.label?.planName, "세션 \(partition.sessionCount)개", "가져올 수 있음 \(importable)개"]
                     .compactMap { $0 }
                     .joined(separator: " · "))
@@ -139,6 +143,17 @@ struct ClaudeContentView: View {
                     ? "대화 파일이 남아 있고 현재 계정 목록에 없는 세션이 없습니다"
                     : "이 계정의 세션 \(importable)개를 현재 계정 목록에 복사합니다")
         }
+    }
+
+    private func nicknameButton(_ partition: ClaudeAccountPartition) -> some View {
+        Button {
+            model.editNickname(accountUUID: partition.accountUUID, organizationUUID: partition.organizationUUID)
+        } label: {
+            Image(systemName: "pencil")
+        }
+        .buttonStyle(.borderless)
+        .controlSize(.small)
+        .help(partition.label?.nickname == nil ? "별명 붙이기" : "별명 바꾸기 · \(partition.label?.maskedEmail ?? "")")
     }
 
     private func compactUsage(_ sample: ClaudeUsageSample?) -> String? {

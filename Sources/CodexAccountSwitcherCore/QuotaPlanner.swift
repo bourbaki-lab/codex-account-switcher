@@ -33,6 +33,10 @@ public struct QuotaAccountSnapshot: Identifiable, Equatable, Sendable {
     public var id: String
     public var provider: QuotaProvider
     public var name: String
+    /// 별명이 있을 때 함께 보여 줄 마스킹 이메일 등 보조 표시.
+    public var secondaryName: String?
+    /// 별명을 바꿀 때 쓰는 원래 식별자(Codex 프로필 UUID, Claude 계정 UUID).
+    public var ownerID: String?
     public var planName: String?
     public var isCurrent: Bool
     public var weekly: QuotaWindowState?
@@ -47,6 +51,8 @@ public struct QuotaAccountSnapshot: Identifiable, Equatable, Sendable {
         id: String,
         provider: QuotaProvider,
         name: String,
+        secondaryName: String? = nil,
+        ownerID: String? = nil,
         planName: String? = nil,
         isCurrent: Bool = false,
         weekly: QuotaWindowState?,
@@ -59,6 +65,8 @@ public struct QuotaAccountSnapshot: Identifiable, Equatable, Sendable {
         self.id = id
         self.provider = provider
         self.name = name
+        self.secondaryName = secondaryName
+        self.ownerID = ownerID
         self.planName = planName
         self.isCurrent = isCurrent
         self.weekly = weekly
@@ -297,7 +305,7 @@ public enum QuotaPlanner {
     static func reason(for advice: QuotaAdvice, now: Date) -> String {
         var parts: [String] = []
         if let remaining = advice.weeklyRemaining, let reset = advice.weeklyResetAt {
-            parts.append("주간 \(Int(remaining.rounded()))% 남음, \(QuotaFormat.time(reset, now: now))\(advice.weeklyResetIsEstimated ? "(추정)" : "") 초기화")
+            parts.append("주간 \(Int(remaining.rounded()))% 남음 · \(QuotaFormat.time(reset, now: now)) 초기화\(advice.weeklyResetIsEstimated ? "(추정)" : "")")
         } else if let remaining = advice.weeklyRemaining {
             parts.append("주간 \(Int(remaining.rounded()))% 남음 · 초기화 시각 미확인")
         }
@@ -308,7 +316,7 @@ public enum QuotaPlanner {
         } else if advice.latestStartAt != nil {
             parts.append("지금부터 5시간마다 이어서 써야 다 소진")
         }
-        return parts.joined(separator: " · ")
+        return parts.joined(separator: "\n")
     }
 }
 

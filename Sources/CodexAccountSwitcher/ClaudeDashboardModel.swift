@@ -67,6 +67,22 @@ final class ClaudeDashboardModel: ObservableObject {
         }
     }
 
+    func editNickname(accountUUID: String, organizationUUID: String) {
+        let partition = report?.partitions.first { $0.accountUUID == accountUUID }
+        let masked = partition?.label?.maskedEmail ?? "계정 \(accountUUID.prefix(8))…"
+        guard let nickname = NicknamePrompt.ask(
+            title: "Claude 계정 별명",
+            detail: "\(masked)\(partition?.label?.planName.map { " · \($0)" } ?? "")\n비워 두고 저장하면 별명을 지웁니다.",
+            current: partition?.label?.nickname
+        ) else { return }
+        do {
+            try ClaudeAccountLabelStore(paths: paths).setNickname(nickname, accountUUID: accountUUID, organizationUUID: organizationUUID)
+            Task { await refresh() }
+        } catch {
+            statusMessage = Redactor.redact(error.localizedDescription)
+        }
+    }
+
     func guideAccountSwitch() {
         let alert = NSAlert()
         alert.messageText = "Claude 앱에서 계정을 바꿀까요?"

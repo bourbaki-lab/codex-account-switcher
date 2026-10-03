@@ -139,6 +139,22 @@ final class AppModel: ObservableObject {
     /// Keeps the visible quota values fresh without repeating the heavier
     /// environment inspection. SwiftUI cancels this task when the popover
     /// content disappears, and starts it again on the next open.
+    func editNickname(_ profile: AccountProfile) {
+        guard let nickname = NicknamePrompt.ask(
+            title: "Codex 프로필 별명",
+            detail: "\(profile.maskedEmail ?? "이메일 없음")\(profile.planType.map { " · \($0.capitalized)" } ?? "")",
+            current: profile.displayName
+        ), !nickname.isEmpty, nickname != profile.displayName else { return }
+        Task {
+            do {
+                try await profileStore.rename(profile.id, to: nickname)
+                profiles = try await profileStore.loadProfiles()
+            } catch {
+                statusMessage = Redactor.redact(error.localizedDescription)
+            }
+        }
+    }
+
     func runAutomaticRateLimitRefresh() async {
         await bootstrap()
         await refreshRateLimits()

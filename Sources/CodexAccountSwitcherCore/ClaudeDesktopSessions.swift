@@ -63,13 +63,16 @@ public struct ClaudeAccountLabel: Codable, Equatable, Sendable {
     public var maskedEmail: String?
     public var planName: String?
     public var observedAt: Date
+    /// 사용자가 붙인 별명. 마스킹 이메일만으로는 계정을 구분하기 어려워 따로 둔다.
+    public var nickname: String?
 
-    public init(accountUUID: String, organizationUUID: String?, maskedEmail: String?, planName: String?, observedAt: Date) {
+    public init(accountUUID: String, organizationUUID: String?, maskedEmail: String?, planName: String?, observedAt: Date, nickname: String? = nil) {
         self.accountUUID = accountUUID
         self.organizationUUID = organizationUUID
         self.maskedEmail = maskedEmail
         self.planName = planName
         self.observedAt = observedAt
+        self.nickname = nickname
     }
 
     func sameDisplay(as other: ClaudeAccountLabel) -> Bool {
@@ -126,7 +129,10 @@ public struct ClaudeAccountPartition: Identifiable, Equatable, Sendable {
     public var sessionCount: Int { sessions.count }
     public var resumableCount: Int { sessions.filter(\.hasTranscript).count }
     public var lastActivityAt: Date? { sessions.compactMap(\.lastActivityAt).max() }
-    public var displayName: String { label?.maskedEmail ?? "계정 \(accountUUID.prefix(8))…" }
+    public var displayName: String {
+        if let nickname = label?.nickname, !nickname.isEmpty { return nickname }
+        return label?.maskedEmail ?? "계정 \(accountUUID.prefix(8))…"
+    }
 }
 
 public struct ClaudeDesktopReport: Equatable, Sendable {
@@ -170,6 +176,20 @@ public struct ClaudeAccountLabelStore: Sendable {
         })
     }
 
+    /// 별명만 바꾼다. 아직 관찰한 라벨이 없는 계정이면 별명만 가진 라벨을 만든다. 빈 문자열은 별명 삭제.
+    public func setNickname(_ nickname: String?, accountUUID: String, organizationUUID: String?, now: Date = Date()) throws {
+        let trimmed = nickname?.trimmingCharacters(in: .whitespacesAndNewlines)
+        var label = load()[accountUUID] ?? ClaudeAccountLabel(
+            accountUUID: accountUUID,
+            organizationUUID: organizationUUID,
+            maskedEmail: nil,
+            planName: nil,
+            observedAt: now
+        )
+        label.nickname = (trimmed?.isEmpty ?? true) ? nil : trimmed
+        try upsert(label)
+    }
+
     public func upsert(_ label: ClaudeAccountLabel) throws {
         var labels = load()
         labels[label.accountUUID] = label
@@ -197,7 +217,8 @@ public struct ClaudeDesktopInspector: Sendable {
         let cliAccount = readCLIAccount(observedAt: now)
         let labelStore = ClaudeAccountLabelStore(paths: paths)
         var labels = labelStore.load()
-        if let cliAccount, labels[cliAccount.accountUUID]?.sameDisplay(as: cliAccount) != true {
+        if var cliAccount, labels[cliAccount.accountUUID]?.sameDisplay(as: cliAccount) != true {
+            cliAccount.nickname = labels[cliAccount.accountUUID]?.nickname
             try? labelStore.upsert(cliAccount)
             labels[cliAccount.accountUUID] = cliAccount
         }
