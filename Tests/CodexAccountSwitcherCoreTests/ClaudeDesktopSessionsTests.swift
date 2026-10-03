@@ -302,12 +302,12 @@ final class ClaudeNicknameTests: XCTestCase {
         try store.setNickname("  메인 Max ", accountUUID: "acct", organizationUUID: "org")
         XCTAssertEqual(store.load()["acct"]?.nickname, "메인 Max")
 
-        try store.upsert(ClaudeAccountLabel(accountUUID: "acct", organizationUUID: "org", maskedEmail: "w***@gmail.com", planName: "Max 20x", observedAt: Date(), nickname: store.load()["acct"]?.nickname))
+        try store.upsert(ClaudeAccountLabel(accountUUID: "acct", organizationUUID: "org", maskedEmail: "u***@example.com", planName: "Max 20x", observedAt: Date(), nickname: store.load()["acct"]?.nickname))
         let partition = ClaudeAccountPartition(accountUUID: "acct", organizationUUID: "org", sessions: [], isCurrent: true, directoryExists: true, label: store.load()["acct"], usage: nil)
         XCTAssertEqual(partition.displayName, "메인 Max")
 
         try store.setNickname("", accountUUID: "acct", organizationUUID: "org")
         XCTAssertNil(store.load()["acct"]?.nickname)
-        XCTAssertEqual(store.load()["acct"]?.maskedEmail, "w***@gmail.com")
+        XCTAssertEqual(store.load()["acct"]?.maskedEmail, "u***@example.com")
     }
 }
