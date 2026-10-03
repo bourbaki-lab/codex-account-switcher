@@ -15,6 +15,24 @@ public struct ClaudeQuotaEstimate: Equatable, Sendable {
     public var weeklyPercentPerSession: Double?
 
     public var sessionResetAt: Date? { sessionStartedAt?.addingTimeInterval(QuotaPlanner.sessionLength) }
+
+    /// 마지막 기록 이후 초기화 시각이 지났으면 다시 찬 것으로 본 지금 시점의 한도.
+    /// 다른 계정의 오래된 기록을 그대로 보여 주면 이미 풀린 5시간 한도가 0%로 남아 보인다.
+    public func current(now: Date = Date()) -> (fiveHour: QuotaWindowState?, weekly: QuotaWindowState?) {
+        let fiveHour = latest.fiveHourUsedPercent.map {
+            QuotaPlanner.normalizeSession(
+                QuotaWindowState(usedPercent: Double($0), resetsAt: sessionResetAt, isEstimated: true),
+                now: now
+            )
+        }
+        let weekly = latest.sevenDayUsedPercent.map {
+            QuotaPlanner.normalizeWeekly(
+                QuotaWindowState(usedPercent: Double($0), resetsAt: weeklyResetAt, isEstimated: true),
+                now: now
+            )
+        }
+        return (fiveHour, weekly)
+    }
 }
 
 public struct ClaudeQuotaHistory: Sendable {

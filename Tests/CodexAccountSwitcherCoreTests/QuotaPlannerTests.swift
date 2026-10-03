@@ -132,6 +132,19 @@ final class QuotaPlannerTests: XCTestCase {
         XCTAssertNil(short?.weeklyPercentPerSession)
     }
 
+    func testEstimateShowsRefilledFiveHourAfterWindowEnds() {
+        let samples: [[String: Any]] = [
+            ["t": 0.0, "org": "o", "u": ["fh": 0, "sd": 10]],
+            ["t": 900_000.0, "org": "o", "u": ["fh": 100, "sd": 22]]
+        ]
+        let estimate = ClaudeQuotaHistory(object: ["samples": samples]).estimates()["o"]!
+        let during = estimate.current(now: Date(timeIntervalSince1970: 3_600))
+        XCTAssertEqual(during.fiveHour?.remainingPercent, 0)
+        let after = estimate.current(now: Date(timeIntervalSince1970: 6 * 3_600))
+        XCTAssertEqual(after.fiveHour?.remainingPercent, 100)
+        XCTAssertEqual(after.weekly?.remainingPercent, 78)
+    }
+
     private func claude(
         _ id: String,
         weeklyUsed: Double,

@@ -209,6 +209,22 @@ final class ClaudeDesktopSessionsTests: XCTestCase {
 
     // MARK: - Fixtures
 
+    func testEmptyFolderUnderPreviousAccountIsNotListed() throws {
+        let root = try TestFixtures.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let paths = Self.paths(root: root)
+        try writeDesktopConfig(paths, currentAccount: accountB)
+        try writeSession(paths, account: accountA, org: orgA, name: "local_1.json", cliSessionID: "cli-1", activity: 1_000)
+        try writeSession(paths, account: accountB, org: orgB, name: "local_2.json", cliSessionID: "cli-2", activity: 2_000)
+        // 앱이 계정 전환 때 이전 계정 아래 만드는 세션 없는 현재 조직 폴더.
+        let phantom = paths.partitionDirectory(accountUUID: accountA, organizationUUID: orgB)
+        try FileManager.default.createDirectory(at: phantom, withIntermediateDirectories: true)
+        try Data("{}".utf8).write(to: phantom.appending(path: "scheduled-tasks.json"))
+
+        let report = ClaudeDesktopInspector(paths: paths, searchRoots: []).inspect()
+        XCTAssertEqual(Set(report.partitions.map(\.id)), ["\(accountA)/\(orgA)", "\(accountB)/\(orgB)"])
+    }
+
     private static func paths(root: URL) -> ClaudeDesktopPaths {
         ClaudeDesktopPaths(
             applicationSupport: root.appending(path: "Claude", directoryHint: .isDirectory),

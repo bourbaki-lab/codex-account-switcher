@@ -42,7 +42,7 @@ struct ClaudeContentView: View {
                 Text("세션 \(current.sessionCount)개 · 대화 파일 있음 \(current.resumableCount)개")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                usage(current.usage)
+                usage(current)
             } else if model.report == nil {
                 Label("Claude 계정 확인 중", systemImage: "arrow.triangle.2.circlepath")
                     .foregroundStyle(.secondary)
@@ -54,15 +54,17 @@ struct ClaudeContentView: View {
     }
 
     @ViewBuilder
-    private func usage(_ sample: ClaudeUsageSample?) -> some View {
-        if let sample {
-            if let used = sample.fiveHourUsedPercent {
-                usageWindow("5시간 한도", used: used)
+    private func usage(_ partition: ClaudeAccountPartition) -> some View {
+        if let estimate = model.quotaEstimates[partition.organizationUUID] {
+            let now = Date()
+            let quota = estimate.current(now: now)
+            if let fiveHour = quota.fiveHour {
+                usageWindow("5시간 한도", window: fiveHour, now: now)
             }
-            if let used = sample.sevenDayUsedPercent {
-                usageWindow("주간 한도", used: used)
+            if let weekly = quota.weekly {
+                usageWindow("주간 한도", window: weekly, now: now)
             }
-            Text("Claude 앱 사용률 기록 · \(sample.sampledAt.formatted(.dateTime.month().day().hour().minute()))")
+            Text("Claude 앱 사용률 기록 · \(estimate.latest.sampledAt.formatted(.dateTime.month().day().hour().minute())) · 초기화 시각은 추정")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         } else {
@@ -72,11 +74,11 @@ struct ClaudeContentView: View {
         }
     }
 
-    private func usageWindow(_ name: String, used: Int) -> some View {
-        let remaining = min(max(100 - used, 0), 100)
+    private func usageWindow(_ name: String, window: QuotaWindowState, now: Date) -> some View {
+        let remaining = Int(window.remainingPercent.rounded())
         return VStack(alignment: .leading, spacing: 3) {
             ProgressView(value: Double(remaining), total: 100)
-            Text("\(name) \(remaining)% 남음")
+            Text("\(name) \(remaining)% 남음\(window.resetsAt.map { " · \(QuotaFormat.time($0, now: now)) 초기화" } ?? "")")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -128,7 +130,7 @@ struct ClaudeContentView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                if let summary = compactUsage(partition.usage) {
+                if let summary = compactUsage(partition) {
                     Text(summary)
                         .font(.caption2)
                         .foregroundStyle(.blue)
@@ -156,14 +158,16 @@ struct ClaudeContentView: View {
         .help(partition.label?.nickname == nil ? "별명 붙이기" : "별명 바꾸기 · \(partition.label?.maskedEmail ?? "")")
     }
 
-    private func compactUsage(_ sample: ClaudeUsageSample?) -> String? {
-        guard let sample else { return nil }
+    private func compactUsage(_ partition: ClaudeAccountPartition) -> String? {
+        guard let estimate = model.quotaEstimates[partition.organizationUUID] else { return nil }
+        let now = Date()
+        let quota = estimate.current(now: now)
         let parts = [
-            sample.fiveHourUsedPercent.map { "5시간 \(max(100 - $0, 0))%" },
-            sample.sevenDayUsedPercent.map { "주간 \(max(100 - $0, 0))%" }
+            quota.fiveHour.map { "5시간 \(Int($0.remainingPercent.rounded()))%" },
+            quota.weekly.map { "주간 \(Int($0.remainingPercent.rounded()))%" }
         ].compactMap { $0 }
         guard !parts.isEmpty else { return nil }
-        return "\(parts.joined(separator: " · ")) 남음 · \(sample.sampledAt.formatted(.dateTime.month().day().hour().minute())) 기록"
+        return "지금 \(parts.joined(separator: " · ")) 남음 · 기록 \(QuotaFormat.time(estimate.latest.sampledAt, now: now))"
     }
 
     private var controls: some View {

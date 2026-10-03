@@ -230,10 +230,14 @@ public struct ClaudeDesktopInspector: Sendable {
             let accountUUID = accountDirectory.lastPathComponent
             for organizationDirectory in subdirectories(of: accountDirectory) {
                 let organizationUUID = organizationDirectory.lastPathComponent
+                let found = sessions(in: organizationDirectory, transcripts: transcripts)
+                // Claude 앱은 계정을 바꿀 때 이전 계정 아래에 새 조직 폴더를 세션 없이 만들기도 한다.
+                // 사용률은 조직 단위라 이런 빈 폴더에 붙이면 다른 계정의 한도가 이전 계정 이름으로 보인다.
+                if found.isEmpty && accountUUID != currentAccountUUID { continue }
                 partitions.append(ClaudeAccountPartition(
                     accountUUID: accountUUID,
                     organizationUUID: organizationUUID,
-                    sessions: sessions(in: organizationDirectory, transcripts: transcripts),
+                    sessions: found,
                     isCurrent: accountUUID == currentAccountUUID,
                     directoryExists: true,
                     label: labels[accountUUID],
