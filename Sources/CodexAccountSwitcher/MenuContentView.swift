@@ -5,6 +5,7 @@ import SwiftUI
 enum DashboardTab: String {
     case codex
     case claude
+    case quota
 }
 
 struct MenuContentView: View {
@@ -18,6 +19,7 @@ struct MenuContentView: View {
             Picker("대시보드", selection: $tab) {
                 Text("Codex").tag(DashboardTab.codex)
                 Text("Claude").tag(DashboardTab.claude)
+                Text("한도 전략").tag(DashboardTab.quota)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -27,6 +29,8 @@ struct MenuContentView: View {
                 codexContent
             case .claude:
                 ClaudeContentView(model: claude)
+            case .quota:
+                QuotaAdviceView(model: model, claude: claude)
             }
             Divider()
             footer
@@ -35,7 +39,7 @@ struct MenuContentView: View {
         .frame(width: 360)
         .task { await model.runAutomaticRateLimitRefresh() }
         .task(id: tab) {
-            if tab == .claude { await claude.runAutomaticRefresh() }
+            if tab != .codex { await claude.runAutomaticRefresh() }
         }
     }
 
@@ -71,6 +75,8 @@ struct MenuContentView: View {
         switch tab {
         case .codex:
             model.environment?.officialApp.map { "공식 앱 \($0.shortVersion ?? "버전 미확인")" } ?? "공식 앱 확인 중"
+        case .quota:
+            "Codex·Claude 계정별 한도 소진 전략"
         case .claude:
             claude.report.map { report in
                 report.app.map { "Claude 앱 \($0.shortVersion ?? "버전 미확인")" } ?? "Claude 앱 없음"

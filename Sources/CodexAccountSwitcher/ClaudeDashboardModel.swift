@@ -11,13 +11,16 @@ final class ClaudeDashboardModel: ObservableObject {
     @Published var isRunning = false
     /// 다른 계정 목록별 가져오기 계획. 키는 `ClaudeAccountPartition.id`.
     @Published var plans: [String: ClaudeCarryOverPlan] = [:]
+    /// 조직별 한도 추정. 키는 조직 UUID.
+    @Published var quotaEstimates: [String: ClaudeQuotaEstimate] = [:]
 
     let paths = ClaudeDesktopPaths()
 
     func refresh() async {
         let paths = paths
-        let (report, plans) = await Task.detached(priority: .userInitiated) {
+        let (report, plans, estimates) = await Task.detached(priority: .userInitiated) {
             let report = ClaudeDesktopInspector(paths: paths).inspect()
+            let estimates = ClaudeQuotaHistory(paths: paths).estimates()
             var plans: [String: ClaudeCarryOverPlan] = [:]
             if let target = report.currentPartition {
                 let carryOver = ClaudeSessionCarryOver(paths: paths)
@@ -25,10 +28,11 @@ final class ClaudeDashboardModel: ObservableObject {
                     plans[source.id] = carryOver.plan(from: source, to: target)
                 }
             }
-            return (report, plans)
+            return (report, plans, estimates)
         }.value
         self.report = report
         self.plans = plans
+        quotaEstimates = estimates
         lastCarryOver = ClaudeSessionCarryOver(paths: paths).latestUndoableRecord()
         isRunning = report.app.map { OfficialAppController().isRunning($0) } ?? false
         if !isBusy {
