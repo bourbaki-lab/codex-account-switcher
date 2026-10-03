@@ -1,3 +1,4 @@
+import AppKit
 import CodexAccountSwitcherCore
 import SwiftUI
 
@@ -5,6 +6,7 @@ import SwiftUI
 struct QuotaAdviceView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var claude: ClaudeDashboardModel
+    @State private var contentHeight: CGFloat = 400
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
@@ -18,13 +20,17 @@ struct QuotaAdviceView: View {
                 } else {
                     Text("마감이 급한 순서").font(.caption).foregroundStyle(.secondary)
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 8) {
                             ForEach(plan.advices) { advice in
                                 adviceRow(advice, now: context.date)
                             }
                         }
+                        .background(GeometryReader { proxy in
+                            Color.clear.preference(key: ListHeightKey.self, value: proxy.size.height)
+                        })
                     }
-                    .frame(maxHeight: 330)
+                    .frame(height: listHeight)
+                    .onPreferenceChange(ListHeightKey.self) { contentHeight = $0 }
                 }
                 Text("Claude 초기화 시각과 5시간 창 환산은 Claude 앱의 15분 간격 사용 기록에서 추정합니다. 다른 계정 값은 그 계정으로 마지막에 쓴 시점 기준이며, 초기화 시각이 지났으면 다시 찬 것으로 계산합니다.")
                     .font(.caption2)
@@ -32,6 +38,14 @@ struct QuotaAdviceView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+
+    /// 팝오버 창은 내용 크기에 맞춰지므로 스크롤 영역에 높이를 주지 않으면 한 줄 남짓으로 접힌다.
+    /// 실제 목록 높이만큼 펼치되 화면 높이를 넘으면 그때부터 스크롤한다.
+    private var listHeight: CGFloat {
+        let screen = NSScreen.main?.visibleFrame.height ?? 900
+        let cap = max(screen - 330, 200)
+        return min(max(contentHeight, 60), cap)
     }
 
     private var snapshots: [QuotaAccountSnapshot] {
@@ -208,5 +222,12 @@ struct QuotaAdviceView: View {
 
     private func tint(_ provider: QuotaProvider) -> Color {
         provider == .claude ? .orange : .blue
+    }
+}
+
+private struct ListHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
